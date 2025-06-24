@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::error;
 use std::rc::Rc;
 
-pub mod node;
+mod node;
 
 use node::internal::InternalNode;
 use node::leaf::LeafNode;
@@ -40,5 +40,9 @@ impl<T: Clone> BPlusTree<T> {
             self.root_node = Rc::new(RefCell::new(new_node));
         };
         Ok((key, value))
+    }
+
+    pub fn search(&self, key: i32) -> Option<T> {
+        self.root_node.borrow_mut().search(key)
     }
 }

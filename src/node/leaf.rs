@@ -5,13 +5,13 @@ use super::BTreeNode;
 use super::SplitResult;
 use crate::NodeRef;
 
-pub struct LeafNode<T> {
+pub struct LeafNode<T: Clone> {
     pub keys: Vec<i32>,
     pub values: Vec<T>,
     pub next: Option<NodeRef<T>>,
 }
 
-impl<T> LeafNode<T> {
+impl<T: Clone> LeafNode<T> {
     fn split(&mut self) -> Option<SplitResult<T>> {
         let split_index = self.keys.len() / 2;
         let right_keys = self.keys.split_off(split_index);
@@ -42,6 +42,13 @@ impl<T> LeafNode<T> {
             self.split()
         } else {
             None
+        }
+    }
+
+    pub fn search(&self, key: i32) -> Option<T> {
+        match self.keys.binary_search(&key) {
+            Ok(pos) => Some(self.values[pos].clone()),
+            Err(_) => None,
         }
     }
 }

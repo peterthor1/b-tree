@@ -5,12 +5,12 @@ use super::BTreeNode;
 use super::SplitResult;
 use crate::NodeRef;
 
-pub struct InternalNode<T> {
+pub struct InternalNode<T: Clone> {
     pub keys: Vec<i32>,
     pub children: Vec<NodeRef<T>>,
 }
 
-impl<T> InternalNode<T> {
+impl<T: Clone> InternalNode<T> {
     fn split(&mut self) -> Option<SplitResult<T>> {
         let split_index = self.keys.len() / 2;
         let right_keys = self.keys.split_off(split_index + 1);
@@ -44,6 +44,13 @@ impl<T> InternalNode<T> {
             self.split()
         } else {
             None
+        }
+    }
+
+    pub fn search(&self, key: i32) -> Option<T> {
+        match self.keys.binary_search(&key) {
+            Ok(pos) => self.children[pos + 1].borrow_mut().search(key),
+            Err(pos) => self.children[pos].borrow_mut().search(key),
         }
     }
 }
