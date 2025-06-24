@@ -45,4 +45,8 @@ impl<T: Clone> BPlusTree<T> {
     pub fn search(&self, key: i32) -> Option<T> {
         self.root_node.borrow_mut().search(key)
     }
+
+    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), ()> {
+        self.root_node.borrow_mut().update(key, value)
+    }
 }

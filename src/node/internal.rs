@@ -53,4 +53,11 @@ impl<T: Clone> InternalNode<T> {
             Err(pos) => self.children[pos].borrow_mut().search(key),
         }
     }
+
+    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), ()> {
+        match self.keys.binary_search(&key) {
+            Ok(pos) => self.children[pos + 1].borrow_mut().update(key, value),
+            Err(pos) => self.children[pos].borrow_mut().update(key, value),
+        }
+    }
 }

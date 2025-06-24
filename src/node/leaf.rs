@@ -51,4 +51,14 @@ impl<T: Clone> LeafNode<T> {
             Err(_) => None,
         }
     }
+
+    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), ()> {
+        match self.keys.binary_search(&key) {
+            Ok(pos) => {
+                self.values[pos] = value;
+                Ok((key, self.values[pos].clone()))
+            }
+            Err(_) => Err(()),
+        }
+    }
 }

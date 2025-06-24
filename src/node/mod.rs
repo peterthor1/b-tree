@@ -25,6 +25,13 @@ impl<T: Clone> BTreeNode<T> {
             BTreeNode::Leaf(node) => node.search(key),
         }
     }
+
+    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), ()> {
+        match self {
+            BTreeNode::Internal(node) => node.update(key, value),
+            BTreeNode::Leaf(node) => node.update(key, value),
+        }
+    }
 }
 
 pub struct SplitResult<T: Clone> {
