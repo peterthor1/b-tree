@@ -5,13 +5,13 @@ use super::BTreeNode;
 use super::SplitResult;
 use crate::NodeRef;
 
-pub struct InternalNode {
+pub struct InternalNode<T> {
     pub keys: Vec<i32>,
-    pub children: Vec<NodeRef>,
+    pub children: Vec<NodeRef<T>>,
 }
 
-impl InternalNode {
-    fn split(&mut self) -> Option<SplitResult> {
+impl<T> InternalNode<T> {
+    fn split(&mut self) -> Option<SplitResult<T>> {
         let split_index = self.keys.len() / 2;
         let right_keys = self.keys.split_off(split_index + 1);
         let right_children = self.children.split_off(split_index + 1);
@@ -29,7 +29,7 @@ impl InternalNode {
         })
     }
 
-    pub fn insert(&mut self, key: i32, value: &str, order: usize) -> Option<SplitResult> {
+    pub fn insert(&mut self, key: i32, value: T, order: usize) -> Option<SplitResult<T>> {
         let split_result = match self.keys.binary_search(&key) {
             Ok(pos) => self.children[pos].borrow_mut().insert(key, value, order),
             Err(pos) => self.children[pos].borrow_mut().insert(key, value, order),

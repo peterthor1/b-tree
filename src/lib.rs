@@ -2,22 +2,22 @@ use std::cell::RefCell;
 use std::error;
 use std::rc::Rc;
 
-mod node;
+pub mod node;
 
 use node::internal::InternalNode;
 use node::leaf::LeafNode;
 use node::BTreeNode;
 
-type NodeRef = Rc<RefCell<BTreeNode>>;
+type NodeRef<T> = Rc<RefCell<BTreeNode<T>>>;
 
-pub struct BPlusTree {
-    pub root_node: NodeRef,
+pub struct BPlusTree<T: Clone> {
+    pub root_node: NodeRef<T>,
     pub order: usize,
 }
 
-impl BPlusTree {
-    pub fn new(order: usize) -> BPlusTree {
-        BPlusTree {
+impl<T: Clone> BPlusTree<T> {
+    pub fn new(order: usize) -> BPlusTree<T> {
+        BPlusTree::<T> {
             root_node: Rc::new(RefCell::new(BTreeNode::Leaf(LeafNode {
                 keys: vec![],
                 values: vec![],
@@ -27,12 +27,11 @@ impl BPlusTree {
         }
     }
 
-    pub fn insert_one<'a>(
-        &mut self,
-        key: i32,
-        value: &'a str,
-    ) -> Result<(i32, &'a str), Box<dyn error::Error>> {
-        let split_result = self.root_node.borrow_mut().insert(key, value, self.order);
+    pub fn insert_one(&mut self, key: i32, value: T) -> Result<(i32, T), Box<dyn error::Error>> {
+        let split_result = self
+            .root_node
+            .borrow_mut()
+            .insert(key, value.clone(), self.order);
         if let Some(split_result) = split_result {
             let new_node = BTreeNode::Internal(InternalNode {
                 keys: vec![split_result.key],
