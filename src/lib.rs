@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::error;
 use std::rc::Rc;
 
 mod node;
@@ -9,6 +8,12 @@ use node::leaf::LeafNode;
 use node::BTreeNode;
 
 type NodeRef<T> = Rc<RefCell<BTreeNode<T>>>;
+
+#[derive(PartialEq)]
+pub struct DoesNotExist;
+
+#[derive(PartialEq)]
+pub struct AlreadyExists;
 
 pub struct BPlusTree<T: Clone> {
     pub root_node: NodeRef<T>,
@@ -27,17 +32,21 @@ impl<T: Clone> BPlusTree<T> {
         }
     }
 
-    pub fn insert_one(&mut self, key: i32, value: T) -> Result<(i32, T), Box<dyn error::Error>> {
+    pub fn insert(&mut self, key: i32, value: T) -> Result<(i32, T), AlreadyExists> {
         let split_result = self
             .root_node
             .borrow_mut()
             .insert(key, value.clone(), self.order);
-        if let Some(split_result) = split_result {
-            let new_node = BTreeNode::Internal(InternalNode {
-                keys: vec![split_result.key],
-                children: vec![Rc::clone(&self.root_node), split_result.right],
-            });
-            self.root_node = Rc::new(RefCell::new(new_node));
+        match split_result {
+            Ok(Some(split_result)) => {
+                let new_node = BTreeNode::Internal(InternalNode {
+                    keys: vec![split_result.key],
+                    children: vec![Rc::clone(&self.root_node), split_result.right],
+                });
+                self.root_node = Rc::new(RefCell::new(new_node));
+            }
+            Ok(None) => {}
+            Err(err) => return Err(err),
         };
         Ok((key, value))
     }
@@ -46,7 +55,7 @@ impl<T: Clone> BPlusTree<T> {
         self.root_node.borrow_mut().search(key)
     }
 
-    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), ()> {
+    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), DoesNotExist> {
         self.root_node.borrow_mut().update(key, value)
     }
 }

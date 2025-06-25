@@ -1,9 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::BTreeNode;
-use super::SplitResult;
-use crate::NodeRef;
+use super::{BTreeNode, SplitResult};
+use crate::{AlreadyExists, DoesNotExist, NodeRef};
 
 pub struct LeafNode<T: Clone> {
     pub keys: Vec<i32>,
@@ -30,18 +29,23 @@ impl<T: Clone> LeafNode<T> {
         })
     }
 
-    pub fn insert(&mut self, key: i32, value: T, order: usize) -> Option<SplitResult<T>> {
+    pub fn insert(
+        &mut self,
+        key: i32,
+        value: T,
+        order: usize,
+    ) -> Result<Option<SplitResult<T>>, AlreadyExists> {
         match self.keys.binary_search(&key) {
-            Ok(_) => {}
+            Ok(_) => return Err(AlreadyExists),
             Err(pos) => {
                 self.keys.insert(pos, key);
                 self.values.insert(pos, value);
             }
         };
         if self.keys.len() > order - 1 {
-            self.split()
+            Ok(self.split())
         } else {
-            None
+            Ok(None)
         }
     }
 
@@ -52,13 +56,13 @@ impl<T: Clone> LeafNode<T> {
         }
     }
 
-    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), ()> {
+    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), DoesNotExist> {
         match self.keys.binary_search(&key) {
             Ok(pos) => {
                 self.values[pos] = value;
                 Ok((key, self.values[pos].clone()))
             }
-            Err(_) => Err(()),
+            Err(_) => Err(DoesNotExist),
         }
     }
 }

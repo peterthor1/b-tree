@@ -1,4 +1,4 @@
-use crate::NodeRef;
+use crate::{AlreadyExists, DoesNotExist, NodeRef};
 
 pub mod internal;
 pub mod leaf;
@@ -12,7 +12,12 @@ pub enum BTreeNode<T: Clone> {
 }
 
 impl<T: Clone> BTreeNode<T> {
-    pub fn insert(&mut self, key: i32, value: T, order: usize) -> Option<SplitResult<T>> {
+    pub fn insert(
+        &mut self,
+        key: i32,
+        value: T,
+        order: usize,
+    ) -> Result<Option<SplitResult<T>>, AlreadyExists> {
         match self {
             BTreeNode::Internal(node) => node.insert(key, value, order),
             BTreeNode::Leaf(node) => node.insert(key, value, order),
@@ -26,7 +31,7 @@ impl<T: Clone> BTreeNode<T> {
         }
     }
 
-    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), ()> {
+    pub fn update(&mut self, key: i32, value: T) -> Result<(i32, T), DoesNotExist> {
         match self {
             BTreeNode::Internal(node) => node.update(key, value),
             BTreeNode::Leaf(node) => node.update(key, value),

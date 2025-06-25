@@ -1,9 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::BTreeNode;
-use super::SplitResult;
-use crate::NodeRef;
+use super::{BTreeNode, SplitResult};
+use crate::{AlreadyExists, DoesNotExist, NodeRef};
 
 pub struct InternalNode<T: Clone> {
     pub keys: Vec<i32>,
@@ -29,21 +28,30 @@ impl<T: Clone> InternalNode<T> {
         })
     }
 
-    pub fn insert(&mut self, key: i32, value: T, order: usize) -> Option<SplitResult<T>> {
+    pub fn insert(
+        &mut self,
+        key: i32,
+        value: T,
+        order: usize,
+    ) -> Result<Option<SplitResult<T>>, AlreadyExists> {
         let split_result = match self.keys.binary_search(&key) {
             Ok(pos) => self.children[pos].borrow_mut().insert(key, value, order),
             Err(pos) => self.children[pos].borrow_mut().insert(key, value, order),
         };
-        if let Some(split_result) = split_result {
-            if let Err(pos) = self.keys.binary_search(&split_result.key) {
-                self.keys.insert(pos, split_result.key);
-                self.children.insert(pos + 1, split_result.right);
-            };
+        match split_result {
+            Ok(Some(split_result)) => {
+                if let Err(pos) = self.keys.binary_search(&split_result.key) {
+                    self.keys.insert(pos, split_result.key);
+                    self.children.insert(pos + 1, split_result.right);
+                }
+            }
+            Ok(None) => {}
+            Err(err) => return Err(err),
         };
         if self.keys.len() > order - 1 {
-            self.split()
+            Ok(self.split())
         } else {
-            None
+            Ok(None)
         }
     }
 
@@ -54,7 +62,7 @@ impl<T: Clone> InternalNode<T> {
         }
     }
 
-    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), ()> {
+    pub fn update(&self, key: i32, value: T) -> Result<(i32, T), DoesNotExist> {
         match self.keys.binary_search(&key) {
             Ok(pos) => self.children[pos + 1].borrow_mut().update(key, value),
             Err(pos) => self.children[pos].borrow_mut().update(key, value),
